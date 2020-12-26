@@ -1,0 +1,9 @@
+0 0 0 0 0 1 0
+1 50 186 171 125 1 1
+50 0 194 60 60 20 0
+70 1 54 194 189 1 0
+71 50 255 250 250 1 2
+100 127 249 219 125 1 0
+101 127 191 191 191 1 0
+102 127 112 112 112 1 0
+//type density r g b life flammable : if you add a type, update menu button count, pixel enum : if you add an attribute, update attribute count in initialization : make sure there is no newline here ->
