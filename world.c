@@ -68,22 +68,61 @@ void initializeWorld(World *w)
     w->powderBank[snow] = 10000;
 
     w->pixelCount = 0;
+    w->zoom = 1;
 }
 
 void drawWorld(World *w, SDL_Renderer *r)
 {
-    for (int x = 0; x < w->width; x++)
+    // int offset = 0;
+    if (w->zoom == 1)
     {
-        for (int y = 0; y < w->height; y++)
+        for (int x = 0; x < w->width; x++)
         {
-            if (w->grid[x][y].type != blank)
+            for (int y = 0; y < w->height; y++)
             {
-                drawPixel(r, x, y, w->grid[x][y].type);
+                if (w->grid[x][y].type != blank)
+                {
+                    drawPixel(r, x, y, w->grid[x][y].type);
+                    w->grid[x][y].updated = false;
+                }
+            }
+        }
+    }
+    else if (w->zoom == 2)
+    {
+        int drawX = 0;
+        int drawY = 0;
+        for (int x = w->zoomX; x < w->zoomX + w->width / 2; x++)
+        {
+            for (int y = w->zoomY; y < w->zoomY + w->height / 2; y++)
+            {
+                if (w->grid[x][y].type != blank)
+                {
+                    drawPixel(r, drawX * 2, drawY * 2, w->grid[x][y].type);
+                    drawPixel(r, drawX * 2 + 1, drawY * 2, w->grid[x][y].type);
+                    drawPixel(r, drawX * 2, drawY * 2 + 1, w->grid[x][y].type);
+                    drawPixel(r, drawX * 2 + 1, drawY * 2 + 1, w->grid[x][y].type);
+                }
+                drawY++;
+            }
+            drawY = 0;
+            drawX++;
+        }
+        for (int x = 0; x < w->width; x++) //need this so it updates off screen as well, probably a better way to do this
+        {
+            for (int y = 0; y < w->height; y++)
+            {
                 w->grid[x][y].updated = false;
             }
         }
     }
 }
+
+// 0 = 0 ,1
+// 1 = 2, 3
+// 2 = 4 5
+// 3 = 6 7
+// 4 = 8 9
 
 void updateWorld(World *w)
 {
@@ -259,5 +298,27 @@ void updateWorld(World *w)
 
             w->grid[x][y].updated = true;
         }
+    }
+}
+
+void adjustZoom(World *w, int x, int y)
+{
+    w->zoomX = x - w->width / 4;
+    w->zoomY = y - w->height / 4;
+    if (w->zoomX < 0)
+    {
+        w->zoomX = 0;
+    }
+    else if ((w->zoomX + w->width / 2) > w->width)
+    {
+        w->zoomX = w->width - w->width / 2;
+    }
+    if (w->zoomY < 0)
+    {
+        w->zoomY = 0;
+    }
+    else if ((w->zoomY + w->height / 2) > w->height)
+    {
+        w->zoomY = w->height - w->height / 2;
     }
 }

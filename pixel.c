@@ -62,37 +62,52 @@ void swapPixel(World *w, Pixel *p1, Pixel *p2, int x1, int y1, int x2, int y2)
     w->grid[x1][y1].updated = true;
 }
 
-void swapPixel2(World *w, Pixel *p1, Pixel *p2, int x1, int y1, int x2, int y2, int caller)
+char checkNeighbour(World *w, int x, int y)
 {
-    printf("CALLER %d\n", caller);
-    printf("ummmm, %d %d %d\n", w->grid[x1][y1].type, x1, y2);
-    printf("muuuu, %d %d %d\n", w->grid[x2][y2].type, x2, y2);
 
-    Pixel *temp1 = malloc(sizeof(Pixel));
-    *temp1 = *p1;
-    Pixel *temp2 = malloc(sizeof(Pixel));
-
-    w->grid[x1][y1] = *p2;
-    w->grid[x2][y2] = *temp1;
-    free(temp1);
-
-    w->grid[x2][y2].updated = true;
-    w->grid[x1][y1].updated = true;
+    return (0);
 }
-// printf("uh yeah %d, %d\n", w->grid[x1][y2].type, w->grid[x1][y2].type);
-// printf("%d %d %d\n", p1->x, p1->y, p1->type);
-// printf("%d %d %d\n", temp->type, temp->x, temp->y);
+
+void changePixel(World *w, int x, int y, char newType)
+{
+    // printf("%d  \n", newType);
+    w->grid[x][y].type = newType;
+    w->grid[x][y].density = attributes[newType].density;
+    w->grid[x][y].life = attributes[newType].life;
+    w->grid[x][y].flammable = attributes[newType].flammable;
+}
+
 void addPixel(World *w, int penSize, int x, int y, char pixType)
 {
-    if (penSize == 0 && w->grid[x][y].type == 0)
+    if (penSize == 1 && w->grid[x][y].type == 0)
     {
-        w->grid[x][y].type = pixType;
-        w->grid[x][y].x = x;
-        w->grid[x][y].y = y;
-        w->grid[x][y].density = attributes[pixType].density;
-        w->grid[x][y].flammable = attributes[pixType].flammable;
+        changePixel(w, x, y, pixType);
         w->powderBank[pixType] -= 1;
         w->pixelCount += 1;
+    }
+    else if (penSize == 2 && w->grid[x][y].type == 0)
+    {
+        changePixel(w, x, y, pixType);
+        w->powderBank[pixType] -= 1;
+        w->pixelCount += 1;
+        if (w->grid[x + 1][y].type == 0)
+        {
+            changePixel(w, x + 1, y, pixType);
+            w->powderBank[pixType] -= 1;
+            w->pixelCount += 1;
+        }
+        if (w->grid[x][y + 1].type == 0)
+        {
+            changePixel(w, x, y + 1, pixType);
+            w->powderBank[pixType] -= 1;
+            w->pixelCount += 1;
+        }
+        if (w->grid[x + 1][y + 1].type == 0)
+        {
+            changePixel(w, x + 1, y + 1, pixType);
+            w->powderBank[pixType] -= 1;
+            w->pixelCount += 1;
+        }
     }
 }
 
@@ -104,15 +119,6 @@ void removePixel(World *w, int x, int y)
     w->grid[x][y].updated = true;
     w->grid[x][y].life = attributes[blank].life;
     w->grid[x][y].flammable = attributes[blank].flammable;
-}
-
-void changePixel(World *w, int x, int y, char newType)
-{
-    // printf("%d  \n", newType);
-    w->grid[x][y].type = newType;
-    w->grid[x][y].density = attributes[newType].density;
-    w->grid[x][y].life = attributes[newType].life;
-    w->grid[x][y].flammable = attributes[newType].flammable;
 }
 
 void melt(World *w, int x, int y)

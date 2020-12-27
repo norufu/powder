@@ -55,6 +55,9 @@ typedef struct World
     char pixelsize;
     int width;
     int height;
+    char zoom;
+    int zoomX;
+    int zoomY;
     Pixel **grid;
     int powderBank[99];
 } World;
@@ -75,5 +78,6 @@ extern void updateWorld();
 extern void drawWorld();
 extern void drawPixel();
 extern void removePixel();
+extern void adjustZoom();
 
 #endif

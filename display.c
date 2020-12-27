@@ -21,16 +21,18 @@ int main(void)
     initializeWorld(&world);
 
     sel.type = powder;
-    int penSize = 0;
+    int penSize = 1;
 
     initializeMenu(&menu);
 
     SDL_Window *window;
     SDL_Renderer *renderer;
     SDL_Event e;
-    bool mouseDown = 0;
-    bool quit = 0;
+    bool mouseDown = false;
+    bool midMouseDown = false;
+    bool quit = false;
     int mx, my;
+    int zoomAdjustX, zoomAdjustY;
 
     srand(time(NULL));
 
@@ -72,15 +74,27 @@ int main(void)
             {
                 if (e.key.keysym.sym == SDLK_1)
                 {
-                    printf("selector is now powder\n");
-                    newSelection(&sel, powder);
+                    world.zoom = 1;
                 }
                 else if (e.key.keysym.sym == SDLK_2)
                 {
-                    printf("selector is now water\n");
-                    newSelection(&sel, water);
+                    mx = 0;
+                    my = 0;
+                    SDL_GetMouseState(&mx, &my);
+                    world.zoom = 2;
+                    adjustZoom(&world, mx, my);
+
+                    // printf("zoomx and y %d %d\n", world.zoomX, world.zoomY);
                 }
-                else if (e.key.keysym.sym == SDLK_SPACE)
+                else if (e.key.keysym.sym == SDLK_UP)
+                {
+                    penSize = 2;
+                }
+                else if (e.key.keysym.sym == SDLK_DOWN)
+                {
+                    penSize = 1;
+                }
+                else if (e.key.keysym.sym == SDLK_SPACE) // debug, prints types for the grid
                 {
                     for (int i = 0; i < world.width; i++)
                     {
@@ -99,32 +113,58 @@ int main(void)
                 mx = 0;
                 my = 0;
                 SDL_GetMouseState(&mx, &my);
-                if (my < 512)
-                { // click on board
-                    mouseDown = 1;
-                }
-                else if (my > 512)
-                { //click on menu
-                    PixelAttributes buttonClicked;
-                    buttonClicked = checkMenu(mx, my, &menu);
-                    if (buttonClicked.type != 0)
-                    {
-                        sel.type = buttonClicked.type;
-                        printf("%d\n", sel.type);
+                if (e.button.button == SDL_BUTTON_LEFT || e.button.button == SDL_BUTTON_RIGHT)
+                {
+                    if (my < world.height)
+                    { // click on board
+                        mouseDown = true;
                     }
+                    else if (my > world.height)
+                    { //click on menu
+                        mouseDown = false;
+                        PixelAttributes buttonClicked;
+                        buttonClicked = checkMenu(mx, my, &menu);
+                        if (buttonClicked.type != blank)
+                        {
+                            sel.type = buttonClicked.type;
+                            printf("%d\n", sel.type);
+                        }
+                    }
+                }
+                else if (e.button.button == SDL_BUTTON_MIDDLE && world.zoom > 1)
+                {
+                    midMouseDown = true;
+                    zoomAdjustX = mx;
+                    zoomAdjustY = my;
                 }
             }
             if (e.type == SDL_MOUSEBUTTONUP)
             {
-                mouseDown = 0;
+                mouseDown = false;
+                midMouseDown = false;
             }
         }
 
         updateWorld(&world);
 
-        if (mouseDown)
+        if (mouseDown) // if clicking, add pixels
         {
-            addPixel(&world, penSize, e.button.x, e.button.y, sel.type);
+            if (world.zoom == 1)
+            {
+                addPixel(&world, penSize, e.button.x, e.button.y, sel.type);
+            }
+            else if (world.zoom == 2)
+            {
+                addPixel(&world, penSize, (e.button.x / 2) + world.zoomX, (e.button.y / 2) + world.zoomY, sel.type);
+            }
+        }
+        else if (midMouseDown) // if holding mid mouse button, adjust zoom by change in mouse
+        {
+            SDL_GetMouseState(&mx, &my);
+            printf("zoom %d\n", zoomAdjustX - mx);
+            adjustZoom(&world, (world.zoomX + world.width / 4) - (zoomAdjustX - mx), (world.zoomY + world.height / 4) - (zoomAdjustY - my)); // adds size/4 to counter the - in adjustzoom function
+            zoomAdjustX = mx;
+            zoomAdjustY = my;
         }
 
         SDL_SetRenderTarget(renderer, NULL);
