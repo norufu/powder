@@ -11,6 +11,12 @@ void drawPixel(SDL_Renderer *r, int x, int y, int type)
     SDL_RenderDrawPoint(r, x, y);
 }
 
+void drawHeat(SDL_Renderer *r, int x, int y, int heat)
+{
+    SDL_SetRenderDrawColor(r, 100 + (heat * 2), 100, 100, 255);
+    SDL_RenderDrawPoint(r, x, y);
+}
+
 void initializeWorld(World *w)
 {
     w->grid = malloc(w->width * sizeof(Pixel));
@@ -28,19 +34,11 @@ void initializeWorld(World *w)
             // spawn walls around outside
             if (s == 0 || s == w->width - 1 || h == 0 || h == w->height - 1)
             {
-                w->grid[s][h].type = wall;
-                w->grid[s][h].updated = true;
-                w->grid[s][h].density = attributes[wall].density;
-                w->grid[s][h].x = s;
-                w->grid[s][h].y = h;
+                initializeWall(w, s, h, wall);
             }
             else
             { // make the rest blank
-                w->grid[s][h].type = blank;
-                w->grid[s][h].updated = true;
-                w->grid[s][h].density = attributes[blank].density;
-                w->grid[s][h].x = s;
-                w->grid[s][h].y = h;
+                initializeWall(w, s, h, blank);
             }
         }
     }
@@ -50,9 +48,7 @@ void initializeWorld(World *w)
     {
         for (int y = 0; y < 30; y++)
         {
-            w->grid[WORLD_WIDTH / 2 - 15 + x][WORLD_HEIGHT / 2 - 15 + y].type = 100;
-            w->grid[WORLD_WIDTH / 2 - 15 + x][WORLD_HEIGHT / 2 - 15 + y].density = attributes[collector].density;
-            w->grid[WORLD_WIDTH / 2 - 15 + x][WORLD_HEIGHT / 2 - 15 + y].updated = true;
+            changePixel(w, WORLD_WIDTH / 2 - 15 + x, WORLD_HEIGHT / 2 - 15 + y, collector);
         }
     }
 
@@ -66,7 +62,8 @@ void initializeWorld(World *w)
     w->powderBank[water] = 10000;
     w->powderBank[fire] = 10000;
     w->powderBank[snow] = 10000;
-
+    w->powderBank[coal] = 10000;
+    w->powderBank[oil] = 10000;
     w->pixelCount = 0;
     w->zoom = 1;
 }
@@ -85,6 +82,8 @@ void drawWorld(World *w, SDL_Renderer *r)
                     drawPixel(r, x, y, w->grid[x][y].type);
                     w->grid[x][y].updated = false;
                 }
+                // if (w->grid[x][y].heat > 0) // for debug
+                //     drawHeat(r, x, y, w->grid[x][y].heat);
             }
         }
     }
@@ -103,6 +102,14 @@ void drawWorld(World *w, SDL_Renderer *r)
                     drawPixel(r, drawX * 2, drawY * 2 + 1, w->grid[x][y].type);
                     drawPixel(r, drawX * 2 + 1, drawY * 2 + 1, w->grid[x][y].type);
                 }
+                // if (w->grid[x][y].heat > 0)  //for debug
+                // {
+                //     drawHeat(r, drawX * 2, drawY * 2, w->grid[x][y].heat);
+                //     drawHeat(r, drawX * 2 + 1, drawY * 2, w->grid[x][y].heat);
+                //     drawHeat(r, drawX * 2, drawY * 2 + 1, w->grid[x][y].heat);
+                //     drawHeat(r, drawX * 2 + 1, drawY * 2 + 1, w->grid[x][y].heat);
+                // }
+
                 drawY++;
             }
             drawY = 0;
@@ -118,19 +125,17 @@ void drawWorld(World *w, SDL_Renderer *r)
     }
 }
 
-// 0 = 0 ,1
-// 1 = 2, 3
-// 2 = 4 5
-// 3 = 6 7
-// 4 = 8 9
-
-void updateWorld(World *w)
+void updateWorld(World *w) // @ I need to tick everything forward then apply the updates to the world, as is now oil spreads to the right instantly butslowly to the left
 {
     for (int x = 0; x < w->width; x++)
     {
         for (int y = 0; y < w->height; y++)
         {
-            if (!w->grid[x][y].updated)
+            if (w->grid[x][y].life < 1)
+            {
+                removePixel(w, x, y);
+            }
+            else if (!w->grid[x][y].updated)
             {
                 switch (w->grid[x][y].type)
                 {
@@ -142,6 +147,15 @@ void updateWorld(World *w)
                         removePixel(w, x, y);
                         w->powderBank[powder] += 2;
                     }
+                    if (w->grid[x][y].heat > attributes[w->grid[x][y].type].changeHeat)
+                    {
+                        light(w, x, y, 0);
+                    }
+                    if (w->grid[x][y].burning)
+                    {
+                        burn(w, x, y, 0);
+                    }
+
                     if (w->grid[x][y + 1].density < attributes[powder].density)
                     { //check below
                         swapPixel(w, &w->grid[x][y], &w->grid[x][y + 1], x, y, x, y + 1);
@@ -155,7 +169,28 @@ void updateWorld(World *w)
                         swapPixel(w, &w->grid[x][y], &w->grid[x - 1][y + 1], x, y, x - 1, y + 1);
                     }
                     break;
-
+                case coal:
+                {
+                    if (w->grid[x][y + 1].type == collector)
+                    {
+                        //collect the pixel
+                        removePixel(w, x, y);
+                        w->powderBank[powder] += 2;
+                    }
+                    if (w->grid[x][y + 1].density < attributes[coal].density)
+                    { //check below
+                        swapPixel(w, &w->grid[x][y], &w->grid[x][y + 1], x, y, x, y + 1);
+                    }
+                    else if (w->grid[x + 1][y + 1].density < attributes[coal].density)
+                    { // check right/down
+                        swapPixel(w, &w->grid[x][y], &w->grid[x + 1][y + 1], x, y, x + 1, y + 1);
+                    }
+                    else if (w->grid[x - 1][y + 1].density < attributes[coal].density)
+                    { // check left/down
+                        swapPixel(w, &w->grid[x][y], &w->grid[x - 1][y + 1], x, y, x - 1, y + 1);
+                    }
+                    break;
+                }
                 case water:
                 {
                     if (w->grid[x][y + 1].type == collector)
@@ -191,7 +226,7 @@ void updateWorld(World *w)
                             }
                             else if (w->grid[x + 1][y].type == snow && rand() % (1 - (-40) + 1) + (-40) > 0)
                             {
-                                melt(w, x + 1, y);
+                                melt(w, x + 1, y, 0);
                             }
                         }
                         else
@@ -206,7 +241,7 @@ void updateWorld(World *w)
                             }
                             else if (w->grid[x - 1][y].type == snow && (rand() % (1 - (-40) + 1) + (-40)) > 0)
                             {
-                                melt(w, x - 1, y);
+                                melt(w, x - 1, y, 0);
                             }
                         }
                     }
@@ -219,6 +254,11 @@ void updateWorld(World *w)
                     // int snowPause = rand() % (1 - (-5) + 1) + (-5); //-5 to 1
                     int xDir;
                     int yDir;
+                    if (w->grid[x][y].heat > attributes[w->grid[x][y].type].changeHeat)
+                    {
+                        melt(w, x, y, 0);
+                        break;
+                    }
                     if (snowPause > 0)
                     {
                         yDir = 1;
@@ -241,12 +281,12 @@ void updateWorld(World *w)
                     }
                     else if (w->grid[x][y + 1].type != blank)
                     {
-                        if (w->grid[x][y + 1].type == water || w->grid[x][y + 1].type == fire)
+                        if (w->grid[x][y + 1].type == water)
                         {
                             int willMelt = rand() % (1 - (-60) + 1) + (-60);
                             if (willMelt > 0)
                             {
-                                melt(w, x, y);
+                                melt(w, x, y, 0);
                             }
                         }
                         if (w->grid[x + 1][y + 1].density == blank)
@@ -256,6 +296,65 @@ void updateWorld(World *w)
                         else if (w->grid[x - 1][y + 1].density == blank)
                         { // check left/down
                             swapPixel(w, &w->grid[x][y], &w->grid[x - 1][y + 1], x, y, x - 1, y + 1);
+                        }
+                    }
+                    break;
+                }
+                case oil:
+                {
+                    if (w->grid[x][y + 1].type == collector)
+                    {
+                        //collect the pixel
+                        removePixel(w, x, y);
+                        w->powderBank[oil] += 2; // ~ for debug, change to powder later
+                    }
+
+                    if (w->grid[x][y].heat > attributes[w->grid[x][y].type].changeHeat)
+                    {
+                        light(w, x, y, 0);
+                    }
+                    if (w->grid[x][y].burning)
+                    {
+                        // doToNeighbours(w, x, y, &light);
+                        burn(w, x, y, 0);
+                    }
+
+                    if (w->grid[x][y + 1].density < attributes[oil].density)
+                    { //check below
+                        swapPixel(w, &w->grid[x][y], &w->grid[x][y + 1], x, y, x, y + 1);
+                    }
+                    else if (w->grid[x + 1][y + 1].density < attributes[oil].density)
+                    { // check right/down
+                        swapPixel(w, &w->grid[x][y], &w->grid[x + 1][y + 1], x, y, x + 1, y + 1);
+                    }
+                    else if (w->grid[x - 1][y + 1].density < attributes[oil].density)
+                    { // check left/down
+                        swapPixel(w, &w->grid[x][y], &w->grid[x - 1][y + 1], x, y, x - 1, y + 1);
+                    }
+                    else
+                    {
+                        int r = rand() % (1 + 1 - 0) + 0; //randomize wether we check left or right first
+                        if (r)
+                        {
+                            if (w->grid[x - 1][y].type == blank)
+                            { // check left
+                                swapPixel(w, &w->grid[x][y], &w->grid[x - 1][y], x, y, x - 1, y);
+                            }
+                            else if (w->grid[x + 1][y].type == blank)
+                            { // check right
+                                swapPixel(w, &w->grid[x][y], &w->grid[x + 1][y], x, y, x + 1, y);
+                            }
+                        }
+                        else
+                        {
+                            if (w->grid[x + 1][y].type == blank)
+                            { // check right
+                                swapPixel(w, &w->grid[x][y], &w->grid[x + 1][y], x, y, x + 1, y);
+                            }
+                            else if (w->grid[x - 1][y].type == 0)
+                            { // check left
+                                swapPixel(w, &w->grid[x][y], &w->grid[x - 1][y], x, y, x - 1, y);
+                            }
                         }
                     }
                     break;
@@ -273,30 +372,38 @@ void updateWorld(World *w)
                             removePixel(w, x, y);
                         }
                         swapPixel(w, &w->grid[x][y], &w->grid[x + rx][y + ry], x, y, (x + rx), (y + ry));
+                        // doToNeighbours(w, x + rx, y + ry, &light);
+                        doToRadius(w, x + rx, y + ry, 0, HEAT_RADIUS, &heat);
+                        break;
                     }
-                    else if (w->grid[x + rx][y + ry].flammable == burns)
-                    {
-                        w->grid[x][y].life = attributes[fire].life;
-                        removePixel(w, x + rx, y + ry);
-                        // w->grid[x + rx][y + ry].type = blank;
-                        addPixel(w, 0, x + rx, y + ry, fire);
-                        swapPixel(w, &w->grid[x][y], &w->grid[x + rx][y + ry], x, y, x + rx, y + ry);
-                    }
-                    else if (w->grid[x + rx][y + ry].type == water)
+                    else if (w->grid[x + rx][y + ry].type == water) // put out fire
                     {
                         removePixel(w, x, y);
+                        break;
                     }
-                    else if (w->grid[x + rx][y + ry].flammable == melts)
-                    {
-                        melt(w, x + rx, y + ry);
-                    }
+                    doToRadius(w, x + rx, y + ry, 0, HEAT_RADIUS, &heat);
+
+                    // else if (w->grid[x + rx][y + ry].flammable == melts)
+                    // {
+                    //     light(w, x + rx, y + ry);
+                    // }
+                    // else if (w->grid[x + rx][y + ry].flammable == burns)
+                    // {
+                    //     w->grid[x][y].life = attributes[fire].life;
+                    //     // removePixel(w, x + rx, y + ry);
+                    //     // w->grid[x + rx][y + ry].type = blank;
+                    //     // addPixel(w, 0, x + rx, y + ry, fire);
+                    //     // swapPixel(w, &w->grid[x][y], &w->grid[x + rx][y + ry], x, y, x + rx, y + ry);
+                    //     light(w, x + rx, y + ry);
+                    // }
                 }
 
                 break;
                 }
             }
-
             w->grid[x][y].updated = true;
+            if (!w->grid[x][y].burning && w->grid[x][y].heat > 0)
+                w->grid[x][y].heat -= 1;
         }
     }
 }

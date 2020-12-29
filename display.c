@@ -88,11 +88,11 @@ int main(void)
                 }
                 else if (e.key.keysym.sym == SDLK_UP)
                 {
-                    penSize = 2;
+                    penSize > 5 ? 5 : penSize++;
                 }
                 else if (e.key.keysym.sym == SDLK_DOWN)
                 {
-                    penSize = 1;
+                    penSize == 1 ? 1 : penSize--;
                 }
                 else if (e.key.keysym.sym == SDLK_SPACE) // debug, prints types for the grid
                 {
@@ -105,6 +105,9 @@ int main(void)
                         printf("\n");
                     }
                     sleep(30);
+                }
+                else if (e.key.keysym.sym == SDLK_9)
+                {
                 }
             }
 
@@ -151,11 +154,11 @@ int main(void)
         {
             if (world.zoom == 1)
             {
-                addPixel(&world, penSize, e.button.x, e.button.y, sel.type);
+                addPixelRadius(&world, e.button.x, e.button.y, 0, penSize, sel.type); //penSize is radius of the area to draw
             }
             else if (world.zoom == 2)
             {
-                addPixel(&world, penSize, (e.button.x / 2) + world.zoomX, (e.button.y / 2) + world.zoomY, sel.type);
+                addPixelRadius(&world, (e.button.x / 2) + world.zoomX, (e.button.y / 2) + world.zoomY, 0, penSize, sel.type);
             }
         }
         else if (midMouseDown) // if holding mid mouse button, adjust zoom by change in mouse

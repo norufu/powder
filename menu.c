@@ -8,7 +8,7 @@
 
 void initializeMenu(Menu *m)
 {
-    int menuTypeOrder[BUTTON_COUNT] = {powder, fire, water, snow};
+    int menuTypeOrder[BUTTON_COUNT] = {powder, coal, fire, water, snow, oil};
 
     for (int i = 0; i < BUTTON_COUNT; i++)
     {
