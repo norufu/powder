@@ -18,6 +18,7 @@ int main(void)
     Menu menu;
     world.width = WORLD_WIDTH;
     world.height = WORLD_HEIGHT;
+
     initializeWorld(&world);
 
     sel.type = powder;
@@ -108,6 +109,11 @@ int main(void)
                 }
                 else if (e.key.keysym.sym == SDLK_9)
                 {
+                    world.heatDebugOn = world.heatDebugOn ? false : true;
+                }
+                else if (e.key.keysym.sym == SDLK_p)
+                {
+                    world.paused = world.paused ? false : true;
                 }
             }
 
@@ -148,7 +154,8 @@ int main(void)
             }
         }
 
-        updateWorld(&world);
+        if (!world.paused)
+            updateWorld(&world);
 
         if (mouseDown) // if clicking, add pixels
         {

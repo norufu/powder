@@ -40,7 +40,7 @@ typedef struct Pixel //@ can most of these be used just by using attributes[type
     char density;
     char type;
     char flammable;
-    char heat;
+    unsigned char heat;
     bool updated;
     bool heated;
     bool burning;
@@ -54,7 +54,7 @@ PixelAttributes attributes[127];
 #define WORLD_WIDTH 512
 #define WORLD_HEIGHT 512
 #define HEAT_RADIUS 5
-
+#define MAX_HEAT 200
 typedef struct World
 {
     int pixelCount;
@@ -66,6 +66,8 @@ typedef struct World
     int zoomY;
     Pixel **grid;
     int powderBank[99];
+    bool heatDebugOn;
+    bool paused;
 } World;
 
 //pixel functions

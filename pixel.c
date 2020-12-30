@@ -5,7 +5,7 @@
 
 #include "world.h"
 
-int heatDist[HEAT_RADIUS] = {5, 4, 3, 2, 1};
+int heatDist[HEAT_RADIUS] = {4, 4, 3, 2, 1};
 
 char boundsOk(World *w, int x, int y)
 {
@@ -334,7 +334,7 @@ void heat(World *w, int x, int y, char dist)
     // if (w->grid[x][y].heated && w->grid[x][y].heat >= dist)
     //     return;
     // else
-    if (boundsOk(w, x, y))
+    if (boundsOk(w, x, y) && w->grid[x][y].heat < MAX_HEAT)
         w->grid[x][y].heat += heatDist[dist];
     // if (w->grid[x][y].heat > attributes[w->grid[x][y].type].changeHeat )
     // {
@@ -378,25 +378,23 @@ void burn(World *w, int x, int y, char dist)
             w->grid[x][y].life -= 1;
             w->grid[x][y].burning = true;
 
-            // doToNeighbours(w, x, y, &light);
-
+            //spread fire randomly
             int rx = rand() % (1 - (-1) + 1) + (-1);
-            ;
             if (w->grid[x + rx][y - 1].type == blank)
             {
                 changePixel(w, x, y - 1, fire);
             }
-            // if (attributes[checkNeighbour(w, x, y, 4)].flammable == 1)
-            // {
-            //     w->grid[x - 1][y].burning = true;
-            // }
-            if (attributes[checkNeighbour(w, x, y, 6)].flammable == 1)
+
+            //spread to neighbouring oil on same y level
+            if (attributes[checkNeighbour(w, x, y, 4)].flammable == 1 && !w->grid[x - 1][y].burning)
             {
-                w->grid[x + 1][y].burning = true;
+                w->grid[x - 1][y].burning = true;
+                w->grid[x + 1][y].updated = true;
             }
-            if (attributes[checkNeighbour(w, x, y, 8)].flammable == 1)
+            if (attributes[checkNeighbour(w, x, y, 6)].flammable == 1 && !w->grid[x + 1][y].burning)
             {
                 w->grid[x + 1][y].burning = true;
+                w->grid[x + 1][y].updated = true;
             }
             break;
         }

@@ -66,6 +66,8 @@ void initializeWorld(World *w)
     w->powderBank[oil] = 10000;
     w->pixelCount = 0;
     w->zoom = 1;
+    w->heatDebugOn = false;
+    w->paused = false;
 }
 
 void drawWorld(World *w, SDL_Renderer *r)
@@ -82,8 +84,8 @@ void drawWorld(World *w, SDL_Renderer *r)
                     drawPixel(r, x, y, w->grid[x][y].type);
                     w->grid[x][y].updated = false;
                 }
-                // if (w->grid[x][y].heat > 0) // for debug
-                //     drawHeat(r, x, y, w->grid[x][y].heat);
+                if (w->grid[x][y].heat > 0 && w->heatDebugOn) // for debug
+                    drawHeat(r, x, y, w->grid[x][y].heat);
             }
         }
     }
@@ -102,13 +104,14 @@ void drawWorld(World *w, SDL_Renderer *r)
                     drawPixel(r, drawX * 2, drawY * 2 + 1, w->grid[x][y].type);
                     drawPixel(r, drawX * 2 + 1, drawY * 2 + 1, w->grid[x][y].type);
                 }
-                // if (w->grid[x][y].heat > 0)  //for debug
-                // {
-                //     drawHeat(r, drawX * 2, drawY * 2, w->grid[x][y].heat);
-                //     drawHeat(r, drawX * 2 + 1, drawY * 2, w->grid[x][y].heat);
-                //     drawHeat(r, drawX * 2, drawY * 2 + 1, w->grid[x][y].heat);
-                //     drawHeat(r, drawX * 2 + 1, drawY * 2 + 1, w->grid[x][y].heat);
-                // }
+
+                if (w->grid[x][y].heat > 0 && w->heatDebugOn) //for debug
+                {
+                    drawHeat(r, drawX * 2, drawY * 2, w->grid[x][y].heat);
+                    drawHeat(r, drawX * 2 + 1, drawY * 2, w->grid[x][y].heat);
+                    drawHeat(r, drawX * 2, drawY * 2 + 1, w->grid[x][y].heat);
+                    drawHeat(r, drawX * 2 + 1, drawY * 2 + 1, w->grid[x][y].heat);
+                }
 
                 drawY++;
             }
@@ -119,7 +122,8 @@ void drawWorld(World *w, SDL_Renderer *r)
         {
             for (int y = 0; y < w->height; y++)
             {
-                w->grid[x][y].updated = false;
+                if (w->grid[x][y].type != blank)
+                    w->grid[x][y].updated = false;
             }
         }
     }
@@ -139,6 +143,10 @@ void updateWorld(World *w) // @ I need to tick everything forward then apply the
             {
                 switch (w->grid[x][y].type)
                 {
+                case blank:
+                {
+                    w->grid[x][y].burning = false;
+                }
                 case powder:
                     // could put this in a move function maybe @
                     if (w->grid[x][y + 1].type == collector)
@@ -402,7 +410,7 @@ void updateWorld(World *w) // @ I need to tick everything forward then apply the
                 }
             }
             w->grid[x][y].updated = true;
-            if (!w->grid[x][y].burning && w->grid[x][y].heat > 0)
+            if (w->grid[x][y].heat > 0)
                 w->grid[x][y].heat -= 1;
         }
     }
