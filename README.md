@@ -10,8 +10,8 @@ In planning interactions between pixel types, some are easier to visualize than 
 <h2>Interactions</h2>
 <p>
 Current supported interactions
-  -Powder burns quickly
-  -Water puts out fire, melts snow slowly
+  \n\t-Powder burns quickly
+  \n\t-Water puts out fire, melts snow slowly
   -Fire burns powder/oil and increases heat in surrounding cells, melts snow quickly
   -Oil floats on water, burns slowly
   -Snow falls in a floaty pattern, when it melts from fire or water it turns into water
