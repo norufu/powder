@@ -8,12 +8,13 @@ The particle system was largely based off a GDC talk for the game <a href="https
 In planning interactions between pixel types, some are easier to visualize than others. Powder falls through water where as oil floats on top of water is easy enough to see, but for the fire and wind I wanted empty cells to still have effects placed on any pixel that enters them. I was quite happy with this debug system that you could toggle to see a visual representation of heat values, or directions of fan velocities.
 
 <h2>Interactions</h2>
-<p>
+
 Current supported interactions
-  <p>-Powder burns quickly</p>
-  -Water puts out fire, melts snow slowly
-  -Fire burns powder/oil and increases heat in surrounding cells, melts snow quickly
-  -Oil floats on water, burns slowly
-  -Snow falls in a floaty pattern, when it melts from fire or water it turns into water
-  -Fan (WIP) static block that pushes nearby pixels
-</p>
+<ul>
+  <li>Powder burns quickly</li>
+  <li>Water puts out fire, melts snow slowly</li>
+  <li>Fire burns powder/oil and increases heat in surrounding cells, melts snow quickly</li>
+  <li>Oil floats on water, burns slowly</li>
+  <li>Snow falls in a floaty pattern, when it melts from fire or water it turns into water</li>
+  <li>Fan (WIP) static block that pushes nearby pixels</li>
+</ul>
