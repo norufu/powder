@@ -23,7 +23,8 @@ enum pixelTypes //0-70 is powders, 71-99 is fluids, 100+ is solid blocks
     oil = 72,
     collector = 100,
     wall = 101,
-    deleter = 102
+    deleter = 102,
+    fan = 103
 };
 
 enum flammableVals
@@ -37,6 +38,8 @@ enum flammableVals
 typedef struct Pixel //@ can most of these be used just by using attributes[type].x? maybe more efficient
 {
     int life;
+    int vx;
+    int vy;
     char density;
     char type;
     char flammable;
@@ -64,9 +67,12 @@ typedef struct World
     char zoom;
     int zoomX;
     int zoomY;
+    int mxDir;
+    int myDir;
     Pixel **grid;
     int powderBank[99];
     bool heatDebugOn;
+    bool windDebugOn;
     bool paused;
 } World;
 
@@ -80,11 +86,13 @@ extern void initializeWall(World *w, int x, int y, char newType);
 
 extern void doToNeighbours();
 extern void doToRadius();
+extern void push(World *w, int x, int y, char dist);
 extern void melt(World *w, int x, int y, char dist);
 extern void burn(World *w, int x, int y, char dist);
 extern void light(World *w, int x, int y, char dist);
 extern void heat(World *w, int x, int y, char dist);
 
+extern void blow();
 //world functions
 
 extern void initializeWorld();

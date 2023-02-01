@@ -83,7 +83,7 @@ void initializeWall(World *w, int x, int y, char newType)
 
 void changePixel(World *w, int x, int y, char newType)
 {
-    if (x <= 0 || x >= w->width - 1)
+    if (x <= 0 || x >= w->width - 1) // check bounds
     {
         return;
     }
@@ -91,12 +91,26 @@ void changePixel(World *w, int x, int y, char newType)
     {
         return;
     }
-    // printf("%d  \n", newType);
+
     w->grid[x][y].type = newType;
     w->grid[x][y].density = attributes[newType].density;
     w->grid[x][y].life = attributes[newType].life;
     w->grid[x][y].flammable = attributes[newType].flammable;
     w->grid[x][y].burning = false;
+    w->grid[x][y].vx = 0;
+    w->grid[x][y].vy = 0;
+
+    if (newType == fan)
+    {
+        if (w->mxDir == 0)
+            w->grid[x][y].vx = 0;
+        else
+            w->grid[x][y].vx = w->mxDir > 0 ? 4 : -4;
+        if (w->myDir == 0)
+            w->grid[x][y].vy = 0;
+        else
+            w->grid[x][y].vy = w->myDir > 0 ? 4 : -4;
+    }
 }
 
 void addPixel(World *w, int x, int y, char pixType)
@@ -123,10 +137,19 @@ void removePixel(World *w, int x, int y)
 
 void swapPixel(World *w, Pixel *p1, Pixel *p2, int x1, int y1, int x2, int y2)
 {
-    Pixel *temp1 = malloc(sizeof(Pixel));
+    Pixel *temp1 = malloc(sizeof(Pixel)); //@ i don't need 2 temps
     *temp1 = *p1;
     Pixel *temp2 = malloc(sizeof(Pixel));
 
+    // if (w->grid[x2][y2].type == blank)
+    // { //if there's wind velocity apply it to the pixel moving into that space
+    //     temp1->vx = w->grid[x2][y2].vx;
+    //     temp1->vy = w->grid[x2][y2].vy;
+    //     p2->vx = 0;
+    //     p2->vy = 0;
+    // }
+    p2->vx = temp1->vx;
+    p2->vy = temp1->vy;
     w->grid[x1][y1] = *p2;
     w->grid[x2][y2] = *temp1;
     free(temp1);
@@ -323,6 +346,83 @@ char hasAir(World *w, int x, int y) // checks up/down/left/right to see if there
 
 //functions affecting pixels
 
+void push(World *w, int x, int y, char dist)
+{
+    float smaller;
+    float tracker;
+    int lastWhole = 0;
+    int bigger;
+    bool xIsBigger;
+    if (abs(w->grid[x][y].vx) > abs(w->grid[x][y].vy))
+    {
+        smaller = (float)w->grid[x][y].vy / w->grid[x][y].vx;
+        if ((w->grid[x][y].vy < 0 && smaller > 0) || (w->grid[x][y].vy > 0 && smaller < 0))
+        {
+            smaller *= -1;
+        }
+        tracker = smaller;
+        bigger = w->grid[x][y].vx;
+        xIsBigger = true;
+    }
+    else
+    {
+        smaller = (float)w->grid[x][y].vx / w->grid[x][y].vy;
+        if ((w->grid[x][y].vx < 0 && smaller > 0) || (w->grid[x][y].vx > 0 && smaller < 0))
+        {
+            smaller *= -1;
+        }
+        tracker = smaller;
+        bigger = w->grid[x][y].vy;
+        xIsBigger = false;
+    }
+
+    int newx = x;
+    int newy = y;
+    int oldx = newx;
+    int oldy = newy;
+    for (int i = 0; i < abs(bigger); i++)
+    {
+        //check place
+        if (xIsBigger)
+        {
+            newx = bigger > 0 ? newx + 1 : newx - 1;
+            tracker += smaller;
+            if (abs((int)floor(tracker)) > abs(lastWhole))
+            {
+                lastWhole = (int)floor(tracker);
+                newy = smaller > 0 ? newy + 1 : newy - 1;
+            }
+        }
+        else
+        {
+            newy = bigger > 0 ? newy + 1 : newy - 1;
+            tracker += smaller;
+            if (abs((int)floor(tracker)) > abs(lastWhole))
+            {
+                lastWhole = (int)floor(tracker);
+                newx = smaller > 0 ? newx + 1 : newx - 1;
+            }
+        }
+
+        if (w->grid[newx][newy].type == blank)
+        { //check if pos is ok
+            oldx = newx;
+            oldy = newy;
+        }
+        else
+        {
+            break;
+        }
+    }
+    swapPixel(w, &w->grid[x][y], &w->grid[oldx][oldy], x, y, oldx, oldy);
+}
+
+//10
+//6
+//6/10 = .6
+//.6 1.2 1.8 2.4 3 3.6 4.2 4.8 5.4 6
+//
+
 void melt(World *w, int x, int y, char dist)
 {
     if (boundsOk(w, x, y))
@@ -398,4 +498,21 @@ void burn(World *w, int x, int y, char dist)
             }
             break;
         }
+}
+
+void blow(World *w, int x, int y)
+{
+    char dirx, diry;
+    if (w->grid[x][y].vx == 0)
+        dirx = 0;
+    else
+        dirx = w->grid[x][y].vx > 0 ? -1 : 1;
+    if (w->grid[x][y].vy == 0)
+        diry = 0;
+    else
+        diry = w->grid[x][y].vy > 0 ? -1 : 1;
+    // printf("%d %d \n", dirx, diry);
+    //change velocity for 1 pixel in the given direction
+    w->grid[x + dirx][y + diry].vx = 4 * dirx;
+    w->grid[x + dirx][y + diry].vy = 4 * diry;
 }

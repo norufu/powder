@@ -33,6 +33,7 @@ int main(void)
     bool midMouseDown = false;
     bool quit = false;
     int mx, my;
+    int oldmx, oldmy;
     int zoomAdjustX, zoomAdjustY;
 
     srand(time(NULL));
@@ -67,6 +68,7 @@ int main(void)
 
         while (SDL_PollEvent(&e))
         {
+
             if (e.type == SDL_QUIT)
             {
                 quit = 1;
@@ -107,9 +109,15 @@ int main(void)
                     }
                     sleep(30);
                 }
+                else if (e.key.keysym.sym == SDLK_8)
+                {
+                    world.grid[5][WORLD_HEIGHT - 2].vx = 20;
+                    world.grid[5][WORLD_HEIGHT - 2].vy = -10;
+                }
                 else if (e.key.keysym.sym == SDLK_9)
                 {
                     world.heatDebugOn = world.heatDebugOn ? false : true;
+                    world.windDebugOn = world.windDebugOn ? false : true;
                 }
                 else if (e.key.keysym.sym == SDLK_p)
                 {
@@ -159,6 +167,12 @@ int main(void)
 
         if (mouseDown) // if clicking, add pixels
         {
+            if (oldmx - e.button.x != 0 || oldmy - e.button.y != 0) //avoid both being 0
+            {
+                world.mxDir = oldmx - e.button.x; //for fan direction
+                world.myDir = oldmy - e.button.y;
+            }
+
             if (world.zoom == 1)
             {
                 addPixelRadius(&world, e.button.x, e.button.y, 0, penSize, sel.type); //penSize is radius of the area to draw
@@ -176,6 +190,7 @@ int main(void)
             zoomAdjustX = mx;
             zoomAdjustY = my;
         }
+        SDL_GetMouseState(&oldmx, &oldmy);
 
         SDL_SetRenderTarget(renderer, NULL);
         // SDL_RenderCopy(renderer, display, NULL, NULL);

@@ -4,7 +4,7 @@
 
 #define BUTTON_HEIGHT 20
 #define BUTTON_WIDTH 75
-#define BUTTON_COUNT 6
+#define BUTTON_COUNT 7
 typedef struct Button
 {
     int x;

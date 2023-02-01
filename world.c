@@ -17,6 +17,15 @@ void drawHeat(SDL_Renderer *r, int x, int y, int heat)
     SDL_RenderDrawPoint(r, x, y);
 }
 
+void drawWind(SDL_Renderer *r, int x, int y, int vx, int vy)
+{
+    SDL_SetRenderDrawColor(r, 245, 191, 66, SDL_ALPHA_OPAQUE);
+    SDL_RenderDrawLine(r, x, y, x + vx, y + vy);
+    // SDL_RenderDrawPoint(r, x, y);
+}
+
+int frameCount = 0;
+
 void initializeWorld(World *w)
 {
     w->grid = malloc(w->width * sizeof(Pixel));
@@ -67,7 +76,11 @@ void initializeWorld(World *w)
     w->pixelCount = 0;
     w->zoom = 1;
     w->heatDebugOn = false;
+    w->windDebugOn = false;
+
     w->paused = false;
+
+    changePixel(w, 5, WORLD_HEIGHT - 2, powder);
 }
 
 void drawWorld(World *w, SDL_Renderer *r)
@@ -86,6 +99,8 @@ void drawWorld(World *w, SDL_Renderer *r)
                 }
                 if (w->grid[x][y].heat > 0 && w->heatDebugOn) // for debug
                     drawHeat(r, x, y, w->grid[x][y].heat);
+                if (w->windDebugOn && (w->grid[x][y].vy > 0 || w->grid[x][y].vx > 0))
+                    drawWind(r, x, y, w->grid[x][y].vx, w->grid[x][y].vy);
             }
         }
     }
@@ -113,6 +128,10 @@ void drawWorld(World *w, SDL_Renderer *r)
                     drawHeat(r, drawX * 2 + 1, drawY * 2 + 1, w->grid[x][y].heat);
                 }
 
+                if (w->windDebugOn && (w->grid[x][y].vy > 0 || w->grid[x][y].vx > 0))
+                {
+                    drawWind(r, drawX * 2, drawY * 2, w->grid[x][y].vx, w->grid[x][y].vy);
+                }
                 drawY++;
             }
             drawY = 0;
@@ -146,6 +165,8 @@ void updateWorld(World *w) // @ I need to tick everything forward then apply the
                 case blank:
                 {
                     w->grid[x][y].burning = false;
+                    //for wind, I want heat and the wind speed/strenght to spread out in the wind direction
+                    break;
                 }
                 case powder:
                     // could put this in a move function maybe @
@@ -405,15 +426,51 @@ void updateWorld(World *w) // @ I need to tick everything forward then apply the
                     //     light(w, x + rx, y + ry);
                     // }
                 }
-
                 break;
+                case fan:
+                {
+                    blow(w, x, y);
+                    break;
+                }
                 }
             }
             w->grid[x][y].updated = true;
             if (w->grid[x][y].heat > 0)
                 w->grid[x][y].heat -= 1;
+
+            if (w->grid[x][y].type < 100) // static types are over 100 @ may want to just make a static bool
+            {
+                if (frameCount % 5 == 0)
+                {
+                    if (w->grid[x][y].vx != 0)
+                    {
+                        if (w->grid[x][y].vx > 0)
+                        {
+                            w->grid[x][y].vx--;
+                        }
+                        else
+                        {
+                            w->grid[x][y].vx++;
+                        }
+                    }
+                    if (w->grid[x][y].vy != 0)
+                    {
+                        if (w->grid[x][y].vy > 0)
+                        {
+                            w->grid[x][y].vy--;
+                        }
+                        else
+                        {
+                            w->grid[x][y].vy++;
+                        }
+                    }
+                }
+                if (w->grid[x][y].type != blank)
+                    push(w, x, y, 0); // testing pushing
+            }
         }
     }
+    frameCount++;
 }
 
 void adjustZoom(World *w, int x, int y)

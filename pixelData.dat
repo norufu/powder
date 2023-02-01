@@ -8,4 +8,5 @@
 100 127 249 219 125 1 0 0
 101 127 191 191 191 1 0 0
 102 127 112 112 112 1 0 0
+103 127 125 181 174 1 0 0
 //type density r g b life flammable changeHeat : if you add a type, update menu button count, pixel enum : if you add an attribute, update attribute count in initialization : make sure there is no newline here ->
