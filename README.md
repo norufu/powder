@@ -4,6 +4,10 @@ This prototype was made in roughly a week as a way to solidify some of the C kno
 <h2>Particle System</h2>
 The particle system was largely based off a GDC talk for the game <a href="https://www.youtube.com/watch?v=prXuyMCgbTc">Noita</a>. The simulation world is a 2D array where each cell contains a Pixel type with the data associated with that cell. Upon spawning a pixel, it checks the cells immediately down, down-left, then down-right to see if and where it should fall. Depending on the type of pixel it will interact and move in a different way. Pixel types have their own values such as density, type, location, flammability, etc.
 
+
+https://user-images.githubusercontent.com/52996037/217034594-ac9a3d2c-4606-4f7f-bbdc-441eaed55953.mov
+
+
 <h2>Heat System / Debug Mode</h2>
 In planning interactions between pixel types, some are easier to visualize than others. Powder falls through water where as oil floats on top of water is easy enough to see, but for the fire and wind I wanted empty cells to still have effects placed on any pixel that enters them. I was quite happy with this debug system that you could toggle to see a visual representation of heat values, or directions of fan velocities.
 
