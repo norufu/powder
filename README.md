@@ -7,8 +7,8 @@ The particle system was largely based off a GDC talk for the game <a href="https
 <h2>Heat System / Debug Mode</h2>
 In planning interactions between pixel types, some are easier to visualize than others. Powder falls through water where as oil floats on top of water is easy enough to see, but for the fire and wind I wanted empty cells to still have effects placed on any pixel that enters them. I was quite happy with this debug system that you could toggle to see a visual representation of heat values, or directions of fan velocities.
 
-https://user-images.githubusercontent.com/52996037/217030563-efb99b13-946b-4c16-b908-52bd8574053a.mov
-
+<video width="200" height="200" autoplay="autoplay">https://user-images.githubusercontent.com/52996037/217031188-dfd16865-5438-4243-aaa9-9aa5cbb389c5.mov
+</video>
 
 <h2>Interactions</h2>
 
